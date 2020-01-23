@@ -70,12 +70,12 @@ export default {
           // eslint-disable-next-line eqeqeq
           if (data.meta.status == 200) {
             this.$message.success('登陆成功')
+            window.sessionStorage.setItem('token', data.data.token)
+            window.sessionStorage.setItem('username', data.data.username)
+            this.$router.push('/home')
           } else {
             this.$message.error(data.meta.msg)
           }
-          console.log(data.data)
-          window.sessionStorage.setItem('token', data.data.token)
-          this.$router.push('/home')
         })
       })
     }
