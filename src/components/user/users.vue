@@ -47,25 +47,27 @@
           </template>
         </el-table-column>
         <el-table-column label="操作">
-          <!-- <template slot-scope="scope"> -->
-          <el-button
-            type="primary"
-            icon="el-icon-edit"
-            size="small"
-          ></el-button>
-          <el-button
-            type="danger"
-            icon="el-icon-delete"
-            size="small"
-          ></el-button>
-          <el-tooltip effect="dark" content="分配权限" placement="top">
+          <template slot-scope="scope">
             <el-button
-              type="warning"
-              icon="el-icon-setting"
+              type="primary"
+              icon="el-icon-edit"
               size="small"
+              @click="showEditDialog(scope.row.id)"
             ></el-button>
-          </el-tooltip>
-          <!-- </template> -->
+            <el-button
+              type="danger"
+              icon="el-icon-delete"
+              size="small"
+              @click="removeUserById(scope.row.id)"
+            ></el-button>
+            <el-tooltip effect="dark" content="分配权限" placement="top">
+              <el-button
+                type="warning"
+                icon="el-icon-setting"
+                size="small"
+              ></el-button>
+            </el-tooltip>
+          </template>
         </el-table-column>
       </el-table>
 
@@ -92,7 +94,7 @@
       <el-form
         :model="addForm"
         :rules="addFormRules"
-         ref="addFormRef"
+        ref="addFormRef"
         label-width="80px"
       >
         <el-form-item label="用户名" prop="username">
@@ -111,6 +113,34 @@
       <span slot="footer" class="dialog-footer">
         <el-button @click="addDialogVisible = false">取 消</el-button>
         <el-button type="primary" @click="addUser()">确 定</el-button>
+      </span>
+    </el-dialog>
+
+    <el-dialog
+      title="修改用户信息"
+      :visible.sync="editDialogVisible"
+      width="50%"
+      @close="editDialogClosed"
+    >
+      <el-form
+        :model="editForm"
+        :rules="editFormRules"
+        ref="editFormRef"
+        label-width="80px"
+      >
+        <el-form-item label="用户名">
+          <el-input v-model="editForm.username" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="editForm.email"></el-input>
+        </el-form-item>
+        <el-form-item label="手机" prop="mobile">
+          <el-input v-model="editForm.mobile"></el-input>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="editDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="editUser()">确 定</el-button>
       </span>
     </el-dialog>
   </div>
@@ -142,12 +172,14 @@ export default {
       usersList: [],
       total: 0,
       addDialogVisible: false,
+      editDialogVisible: false,
       addForm: {
         username: '',
         password: '',
         email: '',
         mobile: ''
       },
+      editForm: {},
       addFormRules: {
         username: [
           { required: true, message: '请输入用户名', trigger: 'blur' },
@@ -168,7 +200,25 @@ export default {
         ],
         mobile: [
           { required: true, message: '请输入手机号码', trigger: 'blur' },
-          { validator: checkMobil, message: '手机号码格式错误', trigger: 'blur' }
+          {
+            validator: checkMobil,
+            message: '手机号码格式错误',
+            trigger: 'blur'
+          }
+        ]
+      },
+      editFormRules: {
+        email: [
+          { required: true, message: '请输入邮箱', trigger: 'blur' },
+          { validator: checkEmail, message: '邮箱格式错误', trigger: 'blur' }
+        ],
+        mobile: [
+          { required: true, message: '请输入手机号码', trigger: 'blur' },
+          {
+            validator: checkMobil,
+            message: '手机号码格式错误',
+            trigger: 'blur'
+          }
         ]
       }
     }
@@ -220,7 +270,7 @@ export default {
           let response = result.data
           console.log(response)
           if (response.meta.status !== 201) {
-            this.$message.error(response.meta.msg)
+            return this.$message.error(response.meta.msg)
           } else {
             this.$message.success(response.meta.msg)
             this.addDialogVisible = false
@@ -228,6 +278,72 @@ export default {
           }
         })
       })
+    },
+    // 展示修改用户的对话框
+    showEditDialog(id) {
+      this.$http.get(`/users/${id}`).then(result => {
+        let response = result.data
+        if (response.meta.status !== 200) {
+          return this.$message.error(response.meta.msg)
+        } else {
+          this.editForm = response.data
+          this.editDialogVisible = true
+        }
+      })
+    },
+    // 对话框关闭时需要清除在对话框上的数据
+    editDialogClosed() {
+      this.$refs.editFormRef.resetFields()
+    },
+    // 发送修改用户信息请求
+    editUser() {
+      // this.$refs.editFormRef.validate(valid => {
+      //   if (!valid) {
+      //     return
+      //   }
+      this.$http
+        .put('/users/' + this.editForm.id, {
+          email: this.editForm.email,
+          mobile: this.editForm.mobile
+        })
+        .then(result => {
+          let response = result.data
+          if (response.meta.status !== 200) {
+            return this.$message.error(response.meta.msg)
+          } else {
+            this.$message.success(response.meta.msg)
+            this.getUserList()
+            this.editDialogVisible = false
+          }
+        })
+      // })
+    },
+    removeUserById(id) {
+      this.$confirm('此操作将永久删除该数据, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      })
+        .then(() => {
+          this.$http.delete('/users/' + id).then(result => {
+            let response = result.data
+            if (response.meta.status !== 200) {
+              return this.$message.error(response.meta.msg)
+            } else {
+              this.$message({
+                type: 'success',
+                message: response.meta.msg
+              })
+              this.getUserList()
+            }
+          })
+        })
+        .catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          })
+        })
     }
   }
 }
