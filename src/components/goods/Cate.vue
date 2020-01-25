@@ -85,12 +85,10 @@
           <span class="demonstration"></span>
           <el-cascader
             v-model="selectedKeys"
-            expand-trigger="hover"
             :options="parentCateList"
             :props="cascaderProps"
             @change="parentCateChanged()"
             clearable
-            change-on-select
           ></el-cascader>
         </el-form-item>
       </el-form>
@@ -173,7 +171,9 @@ export default {
       cascaderProps: {
         value: 'cat_id',
         label: 'cat_name',
-        children: 'children'
+        children: 'children',
+        checkStrictly: true,
+        expandTrigger: true
       },
       // 选中的父级分类的数组
       selectedKeys: [],
