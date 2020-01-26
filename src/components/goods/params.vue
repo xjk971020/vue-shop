@@ -39,6 +39,38 @@
           >
           <!--动态表格参数-->
           <el-table :data="manyTableData" style="width: 100%">
+            <!--展开行数据-->
+            <el-table-column type="expand">
+              <template slot-scope="scope">
+                <el-tag
+                  class="tag"
+                  v-for="(item, i) in scope.row.attr_vals"
+                  :key="item.id"
+                  closable
+                  @close="handleClose(i, scope.row)"
+                >
+                  {{ item }}
+                </el-tag>
+                <!--输入文本框-->
+                <el-input
+                  class="input-new-tag"
+                  v-if="scope.row.inputVisible"
+                  v-model="scope.row.inputValue"
+                  ref="saveTagInput"
+                  size="small"
+                  @keyup.enter.native="handleInputConfirm(scope.row)"
+                  @blur="handleInputConfirm(scope.row)"
+                >
+                </el-input>
+                <el-button
+                  v-else
+                  class="button-new-tag"
+                  size="small"
+                  @click="showInput(scope.row)"
+                  >+ New Tag</el-button
+                >
+              </template>
+            </el-table-column>
             <el-table-column type="index" label="#"> </el-table-column>
             <el-table-column prop="attr_name" label="参数名称">
             </el-table-column>
@@ -72,6 +104,37 @@
           >
           <!--静态属性参数-->
           <el-table :data="onlyTableData" style="width: 100%">
+            <el-table-column type="expand">
+              <template slot-scope="scope">
+                <el-tag
+                  class="tag"
+                  v-for="(item, i) in scope.row.attr_vals"
+                  :key="item.id"
+                  closable
+                  @close="handleClose(i, scope.row)"
+                >
+                  {{ item }}
+                </el-tag>
+                <!--输入文本框-->
+                <el-input
+                  class="input-new-tag"
+                  v-if="scope.row.inputVisible"
+                  v-model="scope.row.inputValue"
+                  ref="saveTagInput"
+                  size="small"
+                  @keyup.enter.native="handleInputConfirm(scope.row)"
+                  @blur="handleInputConfirm(scope.row)"
+                >
+                </el-input>
+                <el-button
+                  v-else
+                  class="button-new-tag"
+                  size="small"
+                  @click="showInput(scope.row)"
+                  >+ New Tag</el-button
+                >
+              </template>
+            </el-table-column>
             <el-table-column type="index" label="#"> </el-table-column>
             <el-table-column prop="attr_name" label="属性名称">
             </el-table-column>
@@ -194,6 +257,12 @@ export default {
     },
     // 选择商品分类的级联选择
     handleChange() {
+      if (this.selectedCateList.length !== 3) {
+        this.selectedCateList = []
+        this.manyTableData = []
+        this.onlyTableData = []
+        return
+      }
       this.getParamsData()
     },
     // 切换标签页
@@ -214,6 +283,14 @@ export default {
           .then(result => {
             let response = result.data
             if (response.meta.status === 200) {
+              response.data.forEach(element => {
+                element.attr_vals = element.attr_vals
+                  ? element.attr_vals.split(' ')
+                  : []
+                // 控制文本框的显示与隐藏
+                element.inputVisible = false
+                element.inputValue = ''
+              })
               this.activeName === 'many'
                 ? (this.manyTableData = response.data)
                 : (this.onlyTableData = response.data)
@@ -267,7 +344,6 @@ export default {
     editDialogClose() {
       this.$refs.editFormRef.resetFields()
     },
-
     editParams() {
       this.$http
         .put(`/categories/${this.cateId}/attributes/${this.editForm.attr_id}`, {
@@ -313,6 +389,48 @@ export default {
             message: '已取消删除'
           })
         })
+    },
+    // 文本框失去焦点
+    handleInputConfirm(row) {
+      if (row.inputValue.trim().length === 0) {
+        row.inputValue = ''
+        row.inputVisible = false
+        return
+      }
+      // 没有return说明输入了有效内容，得做后续处理
+      row.inputVisible = false
+      row.attr_vals.push(row.inputValue)
+      this.saveAttributeVals(row)
+    },
+    saveAttributeVals(row) {
+      this.$http
+        .put(`/categories/${this.cateId}/attributes/${row.attr_id}`, {
+          attr_name: row.attr_name,
+          attr_sel: row.attr_sel,
+          attr_vals: row.attr_vals.join(' ')
+        })
+        .then(result => {
+          let res = result.data
+          if (res.meta.status === 200) {
+            row.inputValue = ''
+            this.$message.success(res.meta.msg)
+          } else {
+            row.attr_vals.pop(row.inputValue)
+            this.$message.error(res.meta.msg)
+          }
+        })
+    },
+    showInput(row) {
+      row.inputVisible = true
+      // 让文本框自动获取焦点
+      // $nextTick方法作用 就是当页面上的元素被重新渲染之后, 才会指定回调函数中的代码
+      this.$nextTick(_ => {
+        this.$refs.saveTagInput.$refs.input.focus()
+      })
+    },
+    handleClose(i, row) {
+      row.attr_vals.splice(i, 1)
+      this.saveAttributeVals(row)
     }
   },
   computed: {
@@ -345,5 +463,13 @@ export default {
 <style lang="less" scoped>
 .cat_opt {
   margin: 15px;
+}
+
+.tag {
+  margin: 10px;
+}
+
+.input-new-tag {
+  width: 120px;
 }
 </style>
