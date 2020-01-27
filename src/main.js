@@ -32,7 +32,13 @@ Vue.component('tree-table', TreeTable)
 
 Vue.use(VueQuillEditor)
 
-Vue.use(VueQuillEditor /* { default global options } */)
+// 自定义全局指令 v-focus，为绑定的元素自动获取焦点：
+Vue.directive('focus', {
+  inserted: function(el) {
+    // inserted 表示被绑定元素插入父节点时调用
+    el.querySelector('input').focus()
+  }
+})
 
 function resolveResponse(result) {
   if (result.data.meta.status === 200) {

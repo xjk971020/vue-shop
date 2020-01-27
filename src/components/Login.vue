@@ -16,6 +16,7 @@
               placeholder="请输入用户名"
               prefix-icon="el-icon-user"
               v-model="loginForm.username"
+              v-focus
             ></el-input>
           </el-form-item>
           <!--密码-->
