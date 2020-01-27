@@ -283,7 +283,7 @@ export default {
         // 发起请求添加商品
         this.$http.post('/goods', form).then(result => {
           let res = result.data
-          if (res.meta.status === 201) {
+          if (res.meta.status === 201 ) {
             this.$message.success(res.meta.msg)
             this.$router.push('/goods')
           } else {
