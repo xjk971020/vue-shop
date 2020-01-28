@@ -31,6 +31,16 @@ axios.interceptors.response.use(config => {
 })
 Vue.prototype.$http = axios
 
+function resolveResponse(result) {
+  if (result.data.meta.status === 200) {
+    return result.data.data
+  } else {
+    return false
+  }
+}
+
+Vue.prototype.$resolveResponse = resolveResponse
+
 Vue.config.productionTip = false
 
 Vue.component('tree-table', TreeTable)

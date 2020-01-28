@@ -43,6 +43,16 @@ Vue.component('tree-table', TreeTable)
 // 将富文本编辑器，注册为全局可用的组件
 Vue.use(VueQuillEditor)
 
+function resolveResponse(result) {
+  if (result.data.meta.status === 200) {
+    return result.data.data
+  } else {
+    return false
+  }
+}
+
+Vue.prototype.$resolveResponse = resolveResponse
+
 Vue.filter('dateFormat', function(originVal) {
   const dt = new Date(originVal)
 
