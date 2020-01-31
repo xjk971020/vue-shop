@@ -1,5 +1,7 @@
 # vue-shop
 
+## 基于vue-element-ui的电商后台管理系统
+
 ## Project setup
 ```
 npm install
@@ -17,6 +19,6 @@ npm run build
 
 ### Lints and fixes files
 ```
-npm run lint
+npm run lint 
 ```
 
